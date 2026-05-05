@@ -1,12 +1,33 @@
+"""books.py — core domain model for the book collection app.
+
+Public surface:
+  Book            – immutable-ish dataclass representing a single book.
+  BookCollection  – in-memory collection backed by a JSON file (DATA_FILE).
+
+Persistence is intentionally simple: every mutating operation rewrites the
+entire JSON file.  See ai-track-docs/extending-books.md for guidance on
+adding new fields or methods.
+"""
+
 import json
 from dataclasses import dataclass, asdict
 from typing import List, Optional
 
+# Path to the JSON file used for persistence.  Tests override this via
+# monkeypatch so they never touch the real file.
 DATA_FILE = "data.json"
 
 
 @dataclass
 class Book:
+    """A single book entry.
+
+    Attributes:
+        title:  Book title (used as the primary lookup key, case-insensitive).
+        author: Author full name.
+        year:   Publication year.
+        read:   Whether the user has marked this book as read.
+    """
     title: str
     author: str
     year: int
@@ -14,6 +35,8 @@ class Book:
 
 
 class BookCollection:
+    """In-memory list of Book objects, automatically persisted to DATA_FILE."""
+
     def __init__(self):
         self.books: List[Book] = []
         self.load_books()
@@ -36,18 +59,28 @@ class BookCollection:
             json.dump([asdict(b) for b in self.books], f, indent=2)
 
     def add_book(self, title: str, author: str, year: int) -> Book:
+        """Create a new Book, append it to the collection, and persist."""
         book = Book(title=title, author=author, year=year)
         self.books.append(book)
         self.save_books()
         return book
 
     def list_books(self) -> List[Book]:
+        """Return all books in insertion order."""
         return self.books
 
     def find_book_by_title(self, title: str) -> Optional[Book]:
+        """Return the first book whose title matches *title* (case-insensitive).
+
+        Returns None if no match is found.  All mutating helpers delegate
+        to this method so lookup logic lives in exactly one place.
+        """
+        # next() with a default avoids an explicit loop and communicates
+        # "find one or nothing" at a glance.
         return next((b for b in self.books if b.title.lower() == title.lower()), None)
 
     def mark_as_read(self, title: str) -> bool:
+        """Mark a book as read.  Returns True on success, False if not found."""
         book = self.find_book_by_title(title)
         if book:
             book.read = True
@@ -56,7 +89,7 @@ class BookCollection:
         return False
 
     def remove_book(self, title: str) -> bool:
-        """Remove a book by title."""
+        """Remove a book by title.  Returns True on success, False if not found."""
         book = self.find_book_by_title(title)
         if book:
             self.books.remove(book)
@@ -65,5 +98,5 @@ class BookCollection:
         return False
 
     def find_by_author(self, author: str) -> List[Book]:
-        """Find all books by a given author."""
+        """Return all books whose author matches *author* (case-insensitive)."""
         return [b for b in self.books if b.author.lower() == author.lower()]
