@@ -60,3 +60,21 @@ def test_find_by_author_returns_only_matching_books():
     results = collection.find_by_author("Isaac Asimov")
     assert len(results) == 2
     assert all(b.author == "Isaac Asimov" for b in results)
+
+# --- input validation (negative tests) ---
+
+@pytest.mark.parametrize("title,author,year,match", [
+    ("",        "Orwell",  1984, "title"),
+    ("  ",      "Orwell",  1984, "title"),
+    ("1984",    "",        1984, "author"),
+    ("1984",    "   ",     1984, "author"),
+    ("1984",    "Orwell",  0,    "year"),
+    ("1984",    "Orwell", -5,    "year"),
+])
+def test_add_book_rejects_invalid_input(title, author, year, match):
+    """add_book must raise ValueError for blank strings or non-positive year."""
+    collection = BookCollection()
+    with pytest.raises(ValueError, match=match):
+        collection.add_book(title, author, year)
+    # collection must remain unmodified
+    assert collection.books == []
