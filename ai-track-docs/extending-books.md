@@ -127,6 +127,49 @@ behaviour preserved) and one for `ON` (new behaviour active).
 
 ---
 
+## Resilience: `save_books` Retry / Backoff
+
+`save_books` delegates all file I/O to the private `_save_with_retry` helper.
+On an `OSError` it retries up to `SAVE_MAX_RETRIES` additional times, sleeping
+`SAVE_RETRY_DELAY_S` seconds between attempts.
+
+| Constant | Default | Meaning |
+|----------|---------|---------|
+| `SAVE_MAX_RETRIES` | `3` | Extra attempts after the first failure |
+| `SAVE_RETRY_DELAY_S` | `0.1` | Fixed delay in seconds between retries |
+
+After all attempts are exhausted, the helper raises:
+
+```
+OSError: save_books failed after N attempt(s)
+```
+
+chained from the original `OSError`.  Each failed attempt also logs a structured
+warning line (see `logging.md`):
+
+```json
+{"op": "save_books", "status": "retry", "attempt": 1, "max": 2, "error": "…"}
+```
+
+### Overriding constants in tests
+
+Both constants are module-level, so `monkeypatch.setattr` controls them without
+touching function signatures:
+
+```python
+monkeypatch.setattr("books.SAVE_MAX_RETRIES", 1)   # only one extra attempt
+monkeypatch.setattr("books.SAVE_RETRY_DELAY_S", 0.0)  # no sleep in tests
+```
+
+### What triggers / does not trigger a retry
+
+| Condition | Retried? |
+|-----------|---------|
+| `OSError` (disk full, permission denied, …) | Yes |
+| `ValueError`, `TypeError`, etc. | No — propagates immediately |
+
+---
+
 ## Running Tests After Any Change
 
 ```bash

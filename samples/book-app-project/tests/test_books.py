@@ -97,3 +97,54 @@ def test_toggle_on_rejects_duplicate_title():
     with pytest.raises(ValueError, match="already exists"):
         collection.add_book("dune", "Someone Else", 2000)  # case-insensitive match
     assert len(collection.books) == 1  # original entry untouched
+
+# --- save_books resilience (retry / error mapping) ---
+
+def test_save_books_raises_ioerror_when_all_retries_fail(monkeypatch, tmp_path):
+    """save_books must raise IOError (not OSError) after exhausting all retries."""
+    import books as bk
+
+    monkeypatch.setattr(bk, "SAVE_MAX_RETRIES", 1)
+    monkeypatch.setattr(bk, "SAVE_RETRY_DELAY_S", 0.0)  # no real sleeping in tests
+
+    # Point DATA_FILE at a path whose parent doesn't exist so every write fails.
+    monkeypatch.setattr(bk, "DATA_FILE", str(tmp_path / "no_dir" / "data.json"))
+
+    collection = BookCollection()  # starts empty (FileNotFoundError on missing dir)
+    collection.books.append(bk.Book("Dune", "Herbert", 1965))
+
+    with pytest.raises(OSError, match="save_books failed after 2 attempt"):
+        collection.save_books()
+
+
+def test_save_books_succeeds_after_transient_failure(monkeypatch, tmp_path):
+    """save_books succeeds if one attempt fails but a subsequent one succeeds."""
+    import books as bk
+
+    monkeypatch.setattr(bk, "SAVE_MAX_RETRIES", 2)
+    monkeypatch.setattr(bk, "SAVE_RETRY_DELAY_S", 0.0)
+
+    good_path = str(tmp_path / "data.json")
+    monkeypatch.setattr(bk, "DATA_FILE", good_path)
+
+    # Patch open() to fail on the first *write* to good_path, then succeed.
+    real_open = open
+    call_count = {"n": 0}
+
+    def flaky_open(path, *args, **kwargs):
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if path == good_path and "w" in mode and call_count["n"] == 0:
+            call_count["n"] += 1
+            raise OSError("simulated transient disk error")
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.open", flaky_open)
+
+    collection = BookCollection()
+    collection.books.append(bk.Book("Foundation", "Asimov", 1951))
+    collection.save_books()  # must not raise
+
+    import json
+    saved = json.loads(open(good_path).read())
+    assert len(saved) == 1
+    assert saved[0]["title"] == "Foundation"

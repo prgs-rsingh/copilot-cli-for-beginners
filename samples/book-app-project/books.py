@@ -48,6 +48,53 @@ def _log_op(op: str, status: str, elapsed_ms: float, **extra) -> None:
 # monkeypatch so they never touch the real file.
 DATA_FILE = "data.json"
 
+# ---------------------------------------------------------------------------
+# Persistence retry settings
+# save_books retries up to SAVE_MAX_RETRIES times on OSError before giving up.
+# Each retry waits SAVE_RETRY_DELAY_S seconds (simple fixed-interval backoff).
+# Both values can be overridden in tests via monkeypatch.
+# ---------------------------------------------------------------------------
+SAVE_MAX_RETRIES: int = 3
+SAVE_RETRY_DELAY_S: float = 0.1
+
+
+def _save_with_retry(
+    path: str,
+    payload: list,
+    max_retries: int = 0,
+    delay_s: float = 0.0,
+) -> None:
+    """Write *payload* as JSON to *path*, retrying on OSError.
+
+    Args:
+        path:        Target file path.
+        payload:     JSON-serialisable list to write.
+        max_retries: Number of additional attempts after the first failure.
+        delay_s:     Seconds to wait between attempts (simple fixed backoff).
+
+    Raises:
+        IOError: Raised after all retries are exhausted, wrapping the last
+                 OSError so callers receive a single stable exception type.
+    """
+    last_exc: OSError | None = None
+    for attempt in range(1 + max_retries):
+        try:
+            with open(path, "w") as f:
+                json.dump(payload, f, indent=2)
+            return  # success
+        except OSError as exc:
+            last_exc = exc
+            _log.warning(json.dumps({
+                "op": "save_books", "status": "retry",
+                "attempt": attempt + 1, "max": 1 + max_retries,
+                "error": str(exc),
+            }))
+            if attempt < max_retries:
+                time.sleep(delay_s)
+    raise OSError(
+        f"save_books failed after {1 + max_retries} attempt(s)"
+    ) from last_exc
+
 
 @dataclass
 class Book:
@@ -95,10 +142,23 @@ class BookCollection:
             }))
             self.books = []
 
-    def save_books(self):
-        """Save the current book collection to JSON."""
-        with open(DATA_FILE, "w") as f:
-            json.dump([asdict(b) for b in self.books], f, indent=2)
+    def save_books(self) -> None:
+        """Persist the collection to DATA_FILE, retrying on transient OSError.
+
+        Uses module-level SAVE_MAX_RETRIES and SAVE_RETRY_DELAY_S so tests
+        can override both without patching the function signature.
+
+        Raises:
+            IOError: if all retry attempts fail.
+        """
+        import books as _self_module  # late import avoids circular ref
+
+        _save_with_retry(
+            DATA_FILE,
+            [asdict(b) for b in self.books],
+            max_retries=_self_module.SAVE_MAX_RETRIES,
+            delay_s=_self_module.SAVE_RETRY_DELAY_S,
+        )
 
     def add_book(self, title: str, author: str, year: int) -> Book:
         """Create a new Book, append it to the collection, and persist.
