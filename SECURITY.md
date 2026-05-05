@@ -29,3 +29,46 @@ This information will help us triage your report more quickly.
 ## Policy
 
 See [GitHub's Safe Harbor Policy](https://docs.github.com/en/site-policy/security-policies/github-bug-bounty-program-legal-safe-harbor#1-safe-harbor-terms)
+
+---
+
+## Secret Hygiene
+
+### What must never be committed
+
+| Type | Examples | Correct alternative |
+|------|----------|-------------------|
+| API keys / tokens | `sk_live_…`, `ghp_…`, `AKIA…` | `process.env.MY_KEY` / `os.environ["MY_KEY"]` |
+| JWT secrets | any hardcoded signing key | env var with startup guard |
+| Private keys / certs | `*.pem`, `*.key`, `*.p12`, `*.pfx` | secrets manager or CI secret store |
+| Cloud credentials | `.aws/credentials`, `gcp-credentials.json`, `serviceAccountKey.json` | IAM roles / workload identity |
+| `.env` files with real values | `.env.production` | `.env.example` (values redacted) only |
+
+### `.gitignore` coverage (enforced in this repo)
+
+The repo `.gitignore` blocks:
+- `.env` and `.env.*` (all variants) — except `.env.example`
+- `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.cert`, `*.crt`
+- `*_credentials.json`, `serviceAccountKey.json`, `gcp-credentials.json`, `.aws/`
+- `.venv/`, `venv/`, `env/` — Python virtual environments
+
+### Intentional buggy samples
+
+`samples/buggy-code/` and `samples/book-app-buggy/` contain **deliberate
+security anti-patterns** (hardcoded secrets, SQL injection, etc.) for course
+exercises.  These files are safe to keep as-is because they contain only
+fake/test values.  Do not copy patterns from these files into production code.
+
+### Pre-commit check
+
+Before opening a PR, run a quick scan for accidental secrets:
+
+```bash
+# Requires truffleHog or git-secrets; basic grep alternative:
+grep -rn --include="*.py" --include="*.js" --include="*.ts" \
+  -E "(password|secret|api_key|token)\s*=\s*['\"][^'\"]{8,}" \
+  samples/book-app-project/ samples/book-app-project-js/ samples/src/
+```
+
+Any match outside `samples/buggy-code/` or `samples/book-app-buggy/` should
+be replaced with an environment variable before merging.

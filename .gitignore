@@ -23,10 +23,20 @@ output.json
 
 # Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+
+# Secret and credential files — never commit these
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+*_credentials.json
+serviceAccountKey.json
+.aws/
+gcp-credentials.json
 
 # IDE and Editor directories
 .vscode/*
@@ -44,6 +54,9 @@ output.json
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+venv/
+env/
 
 # .NET
 bin/
