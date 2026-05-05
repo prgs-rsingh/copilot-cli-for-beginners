@@ -5,12 +5,12 @@ Run from the samples/book-app-project/ directory:
 
 Results are printed to stdout.  Numbers are microseconds (µs) per call.
 """
-import timeit
+import json
+import os
 import statistics
 import sys
-import os
-import json
 import tempfile
+import timeit
 
 import books as bk
 

@@ -1,8 +1,8 @@
 """books.py — core domain model for the book collection app.
 
 Public surface:
-  Book            – immutable-ish dataclass representing a single book.
-  BookCollection  – in-memory collection backed by a JSON file (DATA_FILE).
+  Book            - immutable-ish dataclass representing a single book.
+  BookCollection  - in-memory collection backed by a JSON file (DATA_FILE).
 
 Persistence is intentionally simple: every mutating operation rewrites the
 entire JSON file.  See ai-track-docs/extending-books.md for guidance on
@@ -13,16 +13,15 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass, asdict
-from typing import List, Optional
+from dataclasses import asdict, dataclass
 
 # ---------------------------------------------------------------------------
 # Structured logger
 # Emits one JSON line per mutating operation with fields:
-#   op         – operation name (e.g. "add_book")
-#   status     – "ok" | "not_found" | "error"
-#   elapsed_ms – wall-clock time for the operation in milliseconds
-#   title      – book title involved (when applicable)
+#   op         - operation name (e.g. "add_book")
+#   status     - "ok" | "not_found" | "error"
+#   elapsed_ms - wall-clock time for the operation in milliseconds
+#   title      - book title involved (when applicable)
 #
 # Control verbosity with the BOOK_APP_LOG_LEVEL env var (default: WARNING).
 # Set to DEBUG or INFO to see mutation logs:
@@ -78,19 +77,22 @@ class BookCollection:
     def __init__(self, no_duplicates: bool = False):
         # Feature toggle: reject duplicate titles when True.
         self.no_duplicates = no_duplicates
-        self.books: List[Book] = []
+        self.books: list[Book] = []
         self.load_books()
 
     def load_books(self):
         """Load books from the JSON file if it exists."""
         try:
-            with open(DATA_FILE, "r") as f:
+            with open(DATA_FILE) as f:
                 data = json.load(f)
                 self.books = [Book(**b) for b in data]
         except FileNotFoundError:
             self.books = []
         except json.JSONDecodeError:
-            print("Warning: data.json is corrupted. Starting with empty collection.")
+            _log.warning(json.dumps({
+                "op": "load_books", "status": "error",
+                "detail": "data.json corrupted, starting empty",
+            }))
             self.books = []
 
     def save_books(self):
@@ -119,14 +121,18 @@ class BookCollection:
         book = Book(title=title, author=author, year=year)
         self.books.append(book)
         self.save_books()
-        _log_op("add_book", "ok", (time.perf_counter() - _t) * 1000, title=title, author=author, year=year)
+        _log_op(
+            "add_book", "ok",
+            (time.perf_counter() - _t) * 1000,
+            title=title, author=author, year=year,
+        )
         return book
 
-    def list_books(self) -> List[Book]:
+    def list_books(self) -> list["Book"]:
         """Return all books in insertion order."""
         return self.books
 
-    def find_book_by_title(self, title: str) -> Optional[Book]:
+    def find_book_by_title(self, title: str) -> "Book | None":
         """Return the first book whose title matches *title* (case-insensitive).
 
         Returns None if no match is found.  All mutating helpers delegate
@@ -143,9 +149,15 @@ class BookCollection:
         if book:
             book.read = True
             self.save_books()
-            _log_op("mark_as_read", "ok", (time.perf_counter() - _t) * 1000, title=title)
+            _log_op(
+                "mark_as_read", "ok",
+                (time.perf_counter() - _t) * 1000, title=title,
+            )
             return True
-        _log_op("mark_as_read", "not_found", (time.perf_counter() - _t) * 1000, title=title)
+        _log_op(
+            "mark_as_read", "not_found",
+            (time.perf_counter() - _t) * 1000, title=title,
+        )
         return False
 
     def remove_book(self, title: str) -> bool:
@@ -155,11 +167,17 @@ class BookCollection:
         if book:
             self.books.remove(book)
             self.save_books()
-            _log_op("remove_book", "ok", (time.perf_counter() - _t) * 1000, title=title)
+            _log_op(
+                "remove_book", "ok",
+                (time.perf_counter() - _t) * 1000, title=title,
+            )
             return True
-        _log_op("remove_book", "not_found", (time.perf_counter() - _t) * 1000, title=title)
+        _log_op(
+            "remove_book", "not_found",
+            (time.perf_counter() - _t) * 1000, title=title,
+        )
         return False
 
-    def find_by_author(self, author: str) -> List[Book]:
+    def find_by_author(self, author: str) -> list["Book"]:
         """Return all books whose author matches *author* (case-insensitive)."""
         return [b for b in self.books if b.author.lower() == author.lower()]

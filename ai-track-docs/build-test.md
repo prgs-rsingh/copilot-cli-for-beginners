@@ -62,6 +62,31 @@ pip install pytest
 python book_app.py
 ```
 
+### Lint
+
+The project uses [ruff](https://docs.astral.sh/ruff/) for linting and import sorting.
+Configuration lives in `pyproject.toml` under `[tool.ruff]`.
+
+```bash
+cd samples/book-app-project
+
+# Install (first time only)
+pip install "ruff>=0.4"
+
+# Check all files — exit 1 if any violation found
+ruff check .
+
+# Auto-fix fixable issues (import sorting, etc.)
+ruff check . --fix
+```
+
+**Enabled rule sets:** `E` (pycodestyle), `F` (pyflakes), `I` (isort), `UP` (pyupgrade), `RUF` (ruff-specific)
+
+**Ignored per-file:**
+- `bench_books.py` — `E501` (long lines in benchmark report strings are intentional)
+
+Ruff also runs as a step in the CI workflow before pytest. A lint failure blocks the test step.
+
 ### Run tests
 
 ```bash

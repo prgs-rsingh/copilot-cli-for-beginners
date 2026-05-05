@@ -1,5 +1,8 @@
 import sys
+
 from books import BookCollection
+
+_MIN_ARGS = 2  # script name + command
 
 
 # Global collection instance
@@ -73,7 +76,7 @@ Commands:
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < _MIN_ARGS:
         show_help()
         return
 
