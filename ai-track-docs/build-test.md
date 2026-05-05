@@ -125,4 +125,53 @@ The following directories contain **deliberate bugs** used in course exercises. 
 
 ## CI
 
-The GitHub Actions workflow runs `npm run release:ci` (chapter headers). Full demo generation is performed locally by maintainers before release. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the release checklist.
+### Python tests (GitHub Actions)
+
+**Workflow:** [`.github/workflows/python-tests.yml`](../.github/workflows/python-tests.yml)
+
+Triggers on every push or pull request that touches `samples/book-app-project/**`
+or the workflow file itself.  Also runnable manually via **Actions → Python Tests
+→ Run workflow**.
+
+| Matrix | Value |
+|--------|-------|
+| Runners | `ubuntu-latest` |
+| Python versions | 3.10, 3.11, 3.12, 3.13 |
+| Command | `pytest tests/ -v --tb=short` |
+
+The workflow installs only `pytest>=9.0,<10` — no VHS or Node required — so it
+completes in under 30 seconds.
+
+### Course asset generation (existing workflow)
+
+The `generate-demos.yml.bak` workflow runs `npm run release:ci` (chapter
+headers).  Full demo GIF generation is performed locally by maintainers before
+release.  See [CONTRIBUTING.md](../CONTRIBUTING.md) for the release checklist.
+
+---
+
+## Local Test Script
+
+[`scripts/run-tests.sh`](../scripts/run-tests.sh) provides a single-command way to
+run the full Python test suite without manually managing a virtual environment.
+
+```bash
+# Run all tests (creates .venv automatically if missing)
+bash scripts/run-tests.sh
+
+# Verbose output
+bash scripts/run-tests.sh -v
+
+# Filter by keyword
+bash scripts/run-tests.sh -k add_book
+
+# Any extra argument is forwarded to pytest
+bash scripts/run-tests.sh --tb=long -x
+```
+
+The script:
+1. Checks that Python 3.10+ is on `PATH`.
+2. Creates `samples/book-app-project/.venv` if it does not already exist.
+3. Installs `pytest>=9.0,<10` into the venv.
+4. Runs `pytest tests/` from inside `samples/book-app-project/`, forwarding
+   any arguments you pass.
