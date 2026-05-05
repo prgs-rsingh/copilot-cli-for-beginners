@@ -45,10 +45,7 @@ class BookCollection:
         return self.books
 
     def find_book_by_title(self, title: str) -> Optional[Book]:
-        for book in self.books:
-            if book.title.lower() == title.lower():
-                return book
-        return None
+        return next((b for b in self.books if b.title.lower() == title.lower()), None)
 
     def mark_as_read(self, title: str) -> bool:
         book = self.find_book_by_title(title)
