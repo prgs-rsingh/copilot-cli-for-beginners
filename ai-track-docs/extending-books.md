@@ -95,6 +95,38 @@ When replacing persistence, update the `use_temp_data_file` fixture in `tests/te
 
 ---
 
+## Feature Toggles
+
+`BookCollection` exposes constructor-level toggles that change behaviour without
+altering the public method signatures.  Toggles default to `False` so existing
+code is unaffected.
+
+### `no_duplicates` — duplicate-title guard
+
+| State | Behaviour |
+|-------|-----------|
+| `False` (default) | `add_book` silently allows multiple books with the same title |
+| `True` | `add_book` raises `ValueError("a book titled '…' already exists")` on a case-insensitive title match |
+
+```python
+# OFF (default) — duplicates allowed
+col = BookCollection()
+col.add_book("Dune", "Herbert", 1965)
+col.add_book("Dune", "Herbert", 1965)  # OK — two entries
+
+# ON — duplicates rejected
+strict = BookCollection(no_duplicates=True)
+strict.add_book("Dune", "Herbert", 1965)
+strict.add_book("dune", "Other", 2000)  # raises ValueError
+```
+
+**Adding a new toggle:** follow the same pattern — add a `bool` keyword argument
+to `__init__`, store it as `self.<toggle_name>`, and guard the relevant method
+with an `if self.<toggle_name>:` block.  Write two tests: one for `OFF` (default
+behaviour preserved) and one for `ON` (new behaviour active).
+
+---
+
 ## Running Tests After Any Change
 
 ```bash
@@ -102,4 +134,4 @@ cd samples/book-app-project
 pytest tests/ -v
 ```
 
-All 6 existing tests must stay green.  Add new tests for each new method or field following the conventions in `tests/test_books.py`.
+All existing tests must stay green.  Add new tests for each new method, field, or toggle following the conventions in `tests/test_books.py`.

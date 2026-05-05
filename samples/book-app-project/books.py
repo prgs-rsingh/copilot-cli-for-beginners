@@ -67,9 +67,17 @@ class Book:
 
 
 class BookCollection:
-    """In-memory list of Book objects, automatically persisted to DATA_FILE."""
+    """In-memory list of Book objects, automatically persisted to DATA_FILE.
 
-    def __init__(self):
+    Args:
+        no_duplicates: When True, add_book raises ValueError if a book with
+                       the same title (case-insensitive) already exists.
+                       Default is False (current behaviour: duplicates allowed).
+    """
+
+    def __init__(self, no_duplicates: bool = False):
+        # Feature toggle: reject duplicate titles when True.
+        self.no_duplicates = no_duplicates
         self.books: List[Book] = []
         self.load_books()
 
@@ -95,7 +103,8 @@ class BookCollection:
 
         Raises:
             ValueError: if title or author are blank, or year is not a
-                        positive integer.
+                        positive integer, or (when no_duplicates=True) a book
+                        with the same title already exists.
         """
         if not title or not title.strip():
             raise ValueError("title must not be blank")
@@ -103,6 +112,9 @@ class BookCollection:
             raise ValueError("author must not be blank")
         if not isinstance(year, int) or year <= 0:
             raise ValueError("year must be a positive integer")
+        # Toggle: duplicate-title guard (OFF by default).
+        if self.no_duplicates and self.find_book_by_title(title) is not None:
+            raise ValueError(f"a book titled '{title}' already exists")
         _t = time.perf_counter()
         book = Book(title=title, author=author, year=year)
         self.books.append(book)

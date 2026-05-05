@@ -78,3 +78,20 @@ def test_add_book_rejects_invalid_input(title, author, year, match):
         collection.add_book(title, author, year)
     # collection must remain unmodified
     assert collection.books == []
+
+# --- no_duplicates toggle ---
+
+def test_toggle_off_allows_duplicate_titles():
+    """Default (no_duplicates=False): same title can be added more than once."""
+    collection = BookCollection()  # toggle OFF
+    collection.add_book("Dune", "Frank Herbert", 1965)
+    collection.add_book("Dune", "Frank Herbert", 1965)  # must not raise
+    assert len(collection.books) == 2
+
+def test_toggle_on_rejects_duplicate_title():
+    """no_duplicates=True: adding a title that already exists raises ValueError."""
+    collection = BookCollection(no_duplicates=True)
+    collection.add_book("Dune", "Frank Herbert", 1965)
+    with pytest.raises(ValueError, match="already exists"):
+        collection.add_book("dune", "Someone Else", 2000)  # case-insensitive match
+    assert len(collection.books) == 1  # original entry untouched
