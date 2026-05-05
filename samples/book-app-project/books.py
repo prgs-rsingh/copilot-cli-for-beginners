@@ -10,8 +10,40 @@ adding new fields or methods.
 """
 
 import json
+import logging
+import os
+import time
 from dataclasses import dataclass, asdict
 from typing import List, Optional
+
+# ---------------------------------------------------------------------------
+# Structured logger
+# Emits one JSON line per mutating operation with fields:
+#   op         – operation name (e.g. "add_book")
+#   status     – "ok" | "not_found" | "error"
+#   elapsed_ms – wall-clock time for the operation in milliseconds
+#   title      – book title involved (when applicable)
+#
+# Control verbosity with the BOOK_APP_LOG_LEVEL env var (default: WARNING).
+# Set to DEBUG or INFO to see mutation logs:
+#   BOOK_APP_LOG_LEVEL=INFO python book_app.py add
+# ---------------------------------------------------------------------------
+_log = logging.getLogger("book_app")
+
+if not _log.handlers:
+    _handler = logging.StreamHandler()  # writes to stderr, not stdout
+    _handler.setFormatter(logging.Formatter("%(message)s"))
+    _log.addHandler(_handler)
+
+_log.setLevel(os.environ.get("BOOK_APP_LOG_LEVEL", "WARNING").upper())
+
+
+def _log_op(op: str, status: str, elapsed_ms: float, **extra) -> None:
+    """Emit a single structured JSON log line to stderr."""
+    record = {"op": op, "status": status, "elapsed_ms": round(elapsed_ms, 2)}
+    record.update(extra)
+    _log.info(json.dumps(record))
+
 
 # Path to the JSON file used for persistence.  Tests override this via
 # monkeypatch so they never touch the real file.
@@ -71,9 +103,11 @@ class BookCollection:
             raise ValueError("author must not be blank")
         if not isinstance(year, int) or year <= 0:
             raise ValueError("year must be a positive integer")
+        _t = time.perf_counter()
         book = Book(title=title, author=author, year=year)
         self.books.append(book)
         self.save_books()
+        _log_op("add_book", "ok", (time.perf_counter() - _t) * 1000, title=title, author=author, year=year)
         return book
 
     def list_books(self) -> List[Book]:
@@ -92,20 +126,26 @@ class BookCollection:
 
     def mark_as_read(self, title: str) -> bool:
         """Mark a book as read.  Returns True on success, False if not found."""
+        _t = time.perf_counter()
         book = self.find_book_by_title(title)
         if book:
             book.read = True
             self.save_books()
+            _log_op("mark_as_read", "ok", (time.perf_counter() - _t) * 1000, title=title)
             return True
+        _log_op("mark_as_read", "not_found", (time.perf_counter() - _t) * 1000, title=title)
         return False
 
     def remove_book(self, title: str) -> bool:
         """Remove a book by title.  Returns True on success, False if not found."""
+        _t = time.perf_counter()
         book = self.find_book_by_title(title)
         if book:
             self.books.remove(book)
             self.save_books()
+            _log_op("remove_book", "ok", (time.perf_counter() - _t) * 1000, title=title)
             return True
+        _log_op("remove_book", "not_found", (time.perf_counter() - _t) * 1000, title=title)
         return False
 
     def find_by_author(self, author: str) -> List[Book]:
