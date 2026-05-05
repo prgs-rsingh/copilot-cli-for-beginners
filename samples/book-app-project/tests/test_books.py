@@ -51,3 +51,12 @@ def test_remove_book_invalid():
     collection = BookCollection()
     result = collection.remove_book("Nonexistent Book")
     assert result is False
+
+def test_find_by_author_returns_only_matching_books():
+    collection = BookCollection()
+    collection.add_book("Foundation", "Isaac Asimov", 1951)
+    collection.add_book("Dune", "Frank Herbert", 1965)
+    collection.add_book("I, Robot", "Isaac Asimov", 1950)
+    results = collection.find_by_author("Isaac Asimov")
+    assert len(results) == 2
+    assert all(b.author == "Isaac Asimov" for b in results)
