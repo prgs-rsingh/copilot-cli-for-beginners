@@ -1,0 +1,63 @@
+%%{init: {"theme": "default"}}%%
+graph TD
+    subgraph course["Course Content (00-07/)"]
+        ch00["00 Quick Start"]
+        ch01["01 Setup & First Steps"]
+        ch02["02 Context & Conversations"]
+        ch03["03 Development Workflows"]
+        ch04["04 Agents & Custom Instructions"]
+        ch05["05 Skills"]
+        ch06["06 MCP Servers"]
+        ch07["07 Putting It Together"]
+    end
+
+    subgraph samples["samples/"]
+        bookpy["book-app-project/\n(Python — primary)"]
+        bookcs["book-app-project-cs/\n(C#)"]
+        bookjs["book-app-project-js/\n(JavaScript)"]
+        buggy["book-app-buggy/\n⚠ intentional bugs"]
+        buggycode["buggy-code/\n⚠ intentional bugs"]
+        agents["agents/\n.agent.md templates"]
+        skills["skills/\nSKILL.md templates"]
+        mcp["mcp-configs/\nMCP JSON configs"]
+    end
+
+    subgraph ai["ai-track-docs/"]
+        overview["SYSTEM-OVERVIEW.md"]
+        buildtest["build-test.md"]
+        arch["architecture.mmd"]
+    end
+
+    subgraph track[".copilot-track/crawl/"]
+        crawlreadme["README.md\n(chain-PRs, evidence, prompts)"]
+    end
+
+    subgraph tooling["Course Tooling (package.json)"]
+        npm["npm run release"]
+        ci["npm run release:ci"]
+        vhs["VHS (.tape → .gif)"]
+    end
+
+    subgraph config["Repo Config"]
+        copilot[".github/copilot-instructions.md"]
+        agents_md["AGENTS.md"]
+        glossary["GLOSSARY.md"]
+    end
+
+    %% Chapter → sample relationships
+    ch03 -->|exercises| buggy
+    ch03 -->|exercises| buggycode
+    ch04 -->|templates| agents
+    ch05 -->|templates| skills
+    ch06 -->|configs| mcp
+    ch00 & ch01 & ch02 & ch03 & ch04 & ch05 & ch06 & ch07 -->|primary examples| bookpy
+
+    %% Tooling
+    npm --> vhs
+    ci -.->|CI only| npm
+
+    %% Docs cross-refs
+    overview --> buildtest
+    overview --> arch
+    overview --> crawlreadme
+    copilot --> agents_md
