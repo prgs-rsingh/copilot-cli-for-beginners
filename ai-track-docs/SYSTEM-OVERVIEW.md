@@ -121,6 +121,11 @@ Run tests with: `pytest samples/book-app-project/tests/ -v`
 |----------|---------|
 | [build-test.md](build-test.md) | How to build, run, and test the course and samples |
 | [architecture.mmd](architecture.mmd) | Mermaid component diagram of the repo |
+| [extending-books.md](extending-books.md) | Guide for adding fields/methods to `books.py` |
+| [dependencies.md](dependencies.md) | Critical dependency inventory and pinning policy |
+| [perf-baseline.md](perf-baseline.md) | Micro-benchmark baseline for `BookCollection` lookups |
+| [logging.md](logging.md) | Structured log format, fields, and how to view logs |
 | [.copilot-track/crawl/README.md](../.copilot-track/crawl/README.md) | Chain-PR workflow, evidence conventions, prompt usage |
 | [AGENTS.md](../AGENTS.md) | Agent/skill authoring rules for this repo |
 | [GLOSSARY.md](../GLOSSARY.md) | Definitions of all technical terms used in the course |
+| [draft-pr-summary.md](draft-pr-summary.md) | PR draft with review focus, risks, rollback, and commit message improvements |
