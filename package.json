@@ -12,7 +12,8 @@
     "release": "npm run generate:demos",
     "release:ci": "npm run generate:headers",
     "validate:arch": "node .github/scripts/validate-arch.js",
-    "scan:secrets": "node .github/scripts/scan-secrets.js"
+    "scan:secrets": "node .github/scripts/scan-secrets.js",
+    "gen:arch": "node .github/scripts/gen-arch-diagram.js"
   },
   "keywords": [
     "github-copilot",
