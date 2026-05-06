@@ -14,7 +14,23 @@ from unittest.mock import patch
 
 import pytest
 
-from utils import get_book_details, get_user_choice, print_menu, show_books
+from utils import get_book_details, get_user_choice, print_menu, prompt, show_books
+
+
+# ── prompt ────────────────────────────────────────────────────────────────────
+
+class TestPrompt:
+    def test_returns_stripped_input(self, monkeypatch):
+        monkeypatch.setattr("builtins.input", lambda _: "  hello  ")
+        from utils import prompt
+        assert prompt("label: ") == "hello"
+
+    def test_passes_label_to_input(self, monkeypatch):
+        received = {}
+        monkeypatch.setattr("builtins.input", lambda lbl: received.update({"lbl": lbl}) or "x")
+        from utils import prompt
+        prompt("Enter title: ")
+        assert received["lbl"] == "Enter title: "
 
 
 # ── print_menu ────────────────────────────────────────────────────────────────

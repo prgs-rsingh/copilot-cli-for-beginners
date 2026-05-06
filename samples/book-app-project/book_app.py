@@ -1,6 +1,6 @@
 import sys
 from books import BookCollection
-from utils import show_books, parse_year
+from utils import show_books, parse_year, prompt
 
 
 # Global collection instance
@@ -16,9 +16,9 @@ def handle_list():
 def handle_add():
     print("\nAdd a New Book\n")
 
-    title = input("Title: ").strip()
-    author = input("Author: ").strip()
-    year_str = input("Year: ").strip()
+    title = prompt("Title: ")
+    author = prompt("Author: ")
+    year_str = prompt("Year: ")
 
     try:
         year = parse_year(year_str)
@@ -31,7 +31,7 @@ def handle_add():
 def handle_remove():
     print("\nRemove a Book\n")
 
-    title = input("Enter the title of the book to remove: ").strip()
+    title = prompt("Enter the title of the book to remove: ")
     collection.remove_book(title)
 
     print("\nBook removed if it existed.\n")
@@ -40,7 +40,7 @@ def handle_remove():
 def handle_find():
     print("\nFind Books by Author\n")
 
-    author = input("Author name: ").strip()
+    author = prompt("Author name: ")
     books = collection.find_by_author(author)
 
     show_books(books)

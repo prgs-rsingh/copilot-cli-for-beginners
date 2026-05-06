@@ -11,8 +11,13 @@ def print_menu():
     print("5. Exit")
 
 
+def prompt(label: str) -> str:
+    """Prompt the user with label and return the stripped response."""
+    return input(label).strip()
+
+
 def get_user_choice() -> str:
-    return input("Choose an option (1-5): ").strip()
+    return prompt("Choose an option (1-5): ")
 
 
 def _strict_year_enabled() -> bool:
@@ -42,10 +47,10 @@ def parse_year(year_str: str) -> int:
 
 
 def get_book_details():
-    title = input("Enter book title: ").strip()
-    author = input("Enter author: ").strip()
+    title = prompt("Enter book title: ")
+    author = prompt("Enter author: ")
 
-    year_input = input("Enter publication year: ").strip()
+    year_input = prompt("Enter publication year: ")
     try:
         year = parse_year(year_input)
     except ValueError:
