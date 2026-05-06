@@ -105,6 +105,10 @@ The **[GitHub Copilot CLI command reference](https://docs.github.com/en/copilot/
 3. Make your changes
 4. Submit a pull request
 
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for full contribution guidelines, test and coverage instructions, and the **Walk track workflow** (branching strategy, PR expectations, and prompt structure).
+
+If you are working through walk exercises with Copilot, start with the [Walk Track Onboarding Prompt](./ai-track-docs/onboarding-walk.md) — paste it into Copilot Chat to get oriented instantly.
+
 ## License
 
 This project is licensed under the terms of the MIT open source license. Please refer to the [LICENSE](./LICENSE) file for the full terms.

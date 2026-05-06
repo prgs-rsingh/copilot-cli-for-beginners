@@ -54,3 +54,50 @@ Run the command above and paste the `TOTAL` line from the terminal output into y
 - Tests/logs/metrics: `.venv/bin/pytest` → 5 passed in 0.17s
 - Coverage: 35% total (books.py 87%)
 ```
+
+---
+
+## Walk Track Workflow
+
+This repo uses a structured **Walk track** for AI-assisted development exercises. If you are working through the walk exercises, follow this workflow for every PR.
+
+### Branching strategy
+
+```
+main
+└── walk/ex-<N>-<slug>    e.g. walk/ex-04-onboarding-docs
+```
+
+Create a branch per exercise:
+
+```bash
+git checkout -b walk/ex-04-onboarding-docs
+```
+
+### Prompt structure
+
+Every exercise starts with a structured prompt (stored in `.copilot-track/walk/prompt-exercise.md`) with four sections:
+
+| Section | Purpose |
+|---|---|
+| **Mini Prompt** | One-sentence goal |
+| **Steps** | Ordered steps for Copilot to follow |
+| **Acceptance** | Pass/fail checkpoints to verify after execution |
+| **Troubleshooting** | Hints for resolving ambiguity |
+
+Paste the full prompt into Copilot Chat at the start of each session.
+
+### PR expectations
+
+Every walk PR must use the template in `.copilot-track/walk/pr-template.md`. The PR description must include:
+
+- A filled **Summary** with a link or inline plan
+- **Evidence**: test command + output + coverage percentage
+- **Risk & Rollback**: always include the rollback commit SHA after pushing
+- **Review Focus**: at least one runnable verification step for the reviewer
+
+### Exercise record
+
+After completing an exercise, save `ai-track-docs/ex-<N>-<summary>.md` (auto-incremented) containing the steps run, acceptance results, and the filled PR template. Commit this file alongside the exercise changes.
+
+> For a copy-pasteable onboarding prompt to get Copilot oriented, see [ai-track-docs/onboarding-walk.md](./ai-track-docs/onboarding-walk.md).
