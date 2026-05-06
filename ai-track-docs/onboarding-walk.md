@@ -83,3 +83,10 @@ npm run validate:arch     # validates ai-track-docs/architecture.md paths (from 
 | 02 | `ai-track-docs/ex-02-coverage-reporting.md` | pytest-cov enabled, CONTRIBUTING updated |
 | 03 | `ai-track-docs/ex-03-refactor-consolidate-helpers.md` | Consolidated duplicate display/year-parse logic |
 | 04 | `ai-track-docs/ex-04-onboarding-docs.md` | CONTRIBUTING Walk section + this onboarding prompt |
+| 05 | `ai-track-docs/ex-05-contract-tests.md` | data.json schema contract tests + golden fixture |
+| 06 | `ai-track-docs/ex-06-micro-optimization.md` | Hoisted .lower() out of search loops (−29–30%) |
+| 07 | `ai-track-docs/ex-07-dependency-upgrade.md` | pip 25.2 → 26.1.1 upgrade |
+| 08 | `ai-track-docs/ex-08-secret-scanning.md` | Secret scanner + .gitleaks.toml + SECURITY.md |
+| 09 | `ai-track-docs/ex-09-structured-logging.md` | Structured JSON logging hooks on BookCollection |
+| 10 | `ai-track-docs/ex-10-ci-evidence-summary.md` | Advisory CI evidence workflow (non-blocking) |
+| 11 | `ai-track-docs/ex-11-pr-review-template.md` | Exemplary PR writing: review focus, verification, rollback |
