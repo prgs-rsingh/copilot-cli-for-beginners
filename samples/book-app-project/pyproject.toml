@@ -15,3 +15,26 @@ omit = ["tests/*", ".venv/*", "__pycache__/*"]
 
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:"]
+
+# ── Ruff configuration ────────────────────────────────────────────────────────
+# books.py is the *strictest* path: rules E, F, UP, ANN, I are enforced there
+# via CI (walk-evidence.yml job: strict-lint).
+# Other files are not in scope for this strict gate.
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+# Rules applied project-wide for basic hygiene (ruff defaults + pyupgrade).
+select = ["E", "F", "I", "UP"]
+ignore = [
+    "D203",  # conflicts with D211 (no-blank-line-before-class)
+    "D213",  # conflicts with D212 (multi-line-summary-first-line)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# books.py: stricter — ANN (annotations) added; D/T201/PTH123 suppressed inline
+# All other files: D (docstrings) and ANN (annotations) not required
+"book_app.py"       = ["T201", "ANN", "D"]
+"utils.py"          = ["T201", "ANN", "D"]
+"logging_config.py" = ["ANN", "D"]
+"tests/*.py"        = ["ANN", "D", "S101"]

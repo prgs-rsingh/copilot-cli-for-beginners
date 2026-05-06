@@ -119,6 +119,49 @@ jobs:
           echo "> ⚠️ **This job is advisory only.** Results above are evidence, not gates." >> "$GITHUB_STEP_SUMMARY"
           echo "> It will never block a PR from merging." >> "$GITHUB_STEP_SUMMARY"
 
+  # ── Strict lint gate for books.py (advisory) ──────────────────────────────
+  # Enforces E, F, UP, ANN, I rules on books.py only.
+  # Other files are not in scope: this gate targets the core domain module.
+  # NON-BLOCKING: continue-on-error: true — never prevents a PR from merging.
+  strict-lint:
+    name: "Strict Lint — books.py (ruff E,F,UP,ANN,I)"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install ruff
+        run: pip install ruff -q
+
+      - name: Run strict ruff check on books.py
+        id: ruff-strict
+        continue-on-error: true
+        working-directory: samples/book-app-project
+        run: |
+          ruff check books.py --select E,F,UP,ANN,I --line-length 120 2>&1 | tee ruff-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post ruff results to job summary
+        if: always()
+        working-directory: samples/book-app-project
+        run: |
+          echo "## 🔍 Strict Lint — \`books.py\` (ruff E,F,UP,ANN,I)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Rules: E (style), F (pyflakes), UP (pyupgrade), ANN (annotations), I (isort)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Scope: \`books.py\` only — strictest path, core domain module" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat ruff-output.txt >> "$GITHUB_STEP_SUMMARY" || echo "(no output)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "> Advisory only — this job never blocks merges." >> "$GITHUB_STEP_SUMMARY"
+
   # ── Feature flag matrix validation (advisory) ──────────────────────────
   # Runs test_feature_flags.py under both BOOK_APP_STRICT_YEAR=off and =on.
   # NON-BLOCKING: continue-on-error: true on both matrix legs.
