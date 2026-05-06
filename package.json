@@ -11,7 +11,8 @@
     "generate:demos": "npm run create:tapes && npm run generate:vhs && npm run verify:gifs",
     "release": "npm run generate:demos",
     "release:ci": "npm run generate:headers",
-    "validate:arch": "node .github/scripts/validate-arch.js"
+    "validate:arch": "node .github/scripts/validate-arch.js",
+    "scan:secrets": "node .github/scripts/scan-secrets.js"
   },
   "keywords": [
     "github-copilot",

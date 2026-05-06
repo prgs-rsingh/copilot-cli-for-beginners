@@ -1,0 +1,29 @@
+# .gitleaks.toml
+# Allowlist rules for gitleaks secret scanning.
+# Run locally: gitleaks detect --source . --config .gitleaks.toml
+# Run in CI:   gitleaks detect --source . --config .gitleaks.toml --redact
+#
+# To add a new allowlist rule:
+# 1. Add a [[rules]] override or [[allowlist]] entry below.
+# 2. Document the justification inline.
+# 3. Update ai-track-docs/security-notes.md with the finding and rationale.
+
+title = "gitleaks config — copilot-cli-for-beginners"
+
+[allowlist]
+  description = "Project-level allowlist"
+
+  # Env-var reference placeholders in MCP config samples.
+  # Pattern: "${SOME_VAR}" — reads from runtime environment, never a real secret.
+  # Location: samples/mcp-configs/mcp-config.json
+  # Justified: this is courseware demonstrating how to reference env vars in MCP configs.
+  regexes = [
+    '''\$\{[A-Z_][A-Z0-9_]*\}''',
+  ]
+
+  paths = [
+    # Ignore all .venv directories — third-party packages, not our code.
+    '''.venv''',
+    # Ignore htmlcov — generated coverage HTML, no secrets expected.
+    '''htmlcov''',
+  ]
