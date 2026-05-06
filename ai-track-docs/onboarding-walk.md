@@ -91,5 +91,6 @@ npm run validate:arch     # validates ai-track-docs/architecture.md paths (from 
 | 10 | `ai-track-docs/ex-10-ci-evidence-summary.md` | Advisory CI evidence workflow (non-blocking) |
 | 11 | `ai-track-docs/ex-11-pr-review-template.md` | Exemplary PR writing: review focus, verification, rollback |
 | 12 | `ai-track-docs/ex-12-backlog-epic.md` | Epic + 5 backlog items with acceptance criteria |
+| 13 | `ai-track-docs/ex-13-flag-lifecycle.md` | BOOK_APP_STRICT_YEAR flag: lifecycle doc + ON/OFF matrix |
 
 **Future work**: see `ai-track-docs/backlog.md` for 5 scoped items ready to become PRs.

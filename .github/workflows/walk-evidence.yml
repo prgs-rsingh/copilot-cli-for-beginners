@@ -118,4 +118,53 @@ jobs:
           echo "---" >> "$GITHUB_STEP_SUMMARY"
           echo "> ⚠️ **This job is advisory only.** Results above are evidence, not gates." >> "$GITHUB_STEP_SUMMARY"
           echo "> It will never block a PR from merging." >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Feature flag matrix validation (advisory) ──────────────────────────
+  # Runs test_feature_flags.py under both BOOK_APP_STRICT_YEAR=off and =on.
+  # NON-BLOCKING: continue-on-error: true on both matrix legs.
+  flag-matrix:
+    name: "Feature Flag Matrix — BOOK_APP_STRICT_YEAR=${{ matrix.flag_state }}"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flag_state: ["off", "on"]
+        include:
+          - flag_state: "off"
+            env_value: ""
+          - flag_state: "on"
+            env_value: "1"
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        working-directory: samples/book-app-project
+        run: pip install pytest pytest-cov
+
+      - name: Run feature flag tests (BOOK_APP_STRICT_YEAR=${{ matrix.flag_state }})
+        id: flag-tests
+        working-directory: samples/book-app-project
+        continue-on-error: true
+        env:
+          BOOK_APP_STRICT_YEAR: ${{ matrix.env_value }}
+        run: |
+          pytest tests/test_feature_flags.py -v 2>&1 | tee flag-test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post flag test results to job summary
+        if: always()
+        working-directory: samples/book-app-project
+        run: |
+          echo "## 🚩 Feature Flag: BOOK_APP_STRICT_YEAR=${{ matrix.flag_state }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -5 flag-test-output.txt >> "$GITHUB_STEP_SUMMARY" || echo "(no output)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "> Advisory only — this job never blocks merges." >> "$GITHUB_STEP_SUMMARY"
           echo "> To action a finding, open a follow-up issue or exercise." >> "$GITHUB_STEP_SUMMARY"
