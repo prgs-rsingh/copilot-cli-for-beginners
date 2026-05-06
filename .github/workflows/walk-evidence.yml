@@ -1,0 +1,121 @@
+name: Walk Track — Evidence Summary
+
+# Advisory CI job: runs coverage, secret scan, and architecture validation
+# on every PR and posts results to the GitHub Actions job summary.
+#
+# This job is NON-BLOCKING: continue-on-error: true on every evidence step.
+# It will never prevent a PR from merging — it only surfaces evidence.
+#
+# To view results: PR → Checks tab → "Walk Track — Evidence Summary" → Summary
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  evidence-summary:
+    name: Evidence Summary (advisory)
+    runs-on: ubuntu-latest
+    # Job-level failure does NOT block merges — this is a soft gate only.
+    # Branch protection rules must NOT include this workflow as a required check.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node setup (for validate:arch and scan:secrets) ──────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Python setup (for pytest + coverage) ─────────────────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Python dependencies
+        working-directory: samples/book-app-project
+        run: pip install pytest pytest-cov
+
+      # ── Run tests + coverage ─────────────────────────────────────────────
+      - name: Run tests with coverage
+        id: coverage
+        working-directory: samples/book-app-project
+        # continue-on-error so test failures are reported but never block merge
+        continue-on-error: true
+        run: |
+          pytest --cov=. --cov-report=term-missing --cov-report=json \
+            2>&1 | tee coverage-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post coverage to job summary
+        if: always()
+        working-directory: samples/book-app-project
+        run: |
+          echo "## 🧪 Test & Coverage Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # Parse total from coverage.json if available, else fallback to text
+          if [ -f coverage.json ]; then
+            TOTAL=$(python3 -c "import json,sys; d=json.load(open('coverage.json')); print(round(d['totals']['percent_covered']))")
+            BOOKS=$(python3 -c "import json,sys; d=json.load(open('coverage.json')); f=d['files']; k=[k for k in f if 'books.py' in k][0]; print(round(f[k]['summary']['percent_covered']))")
+            echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Total coverage | ${TOTAL}% |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| \`books.py\` coverage | ${BOOKS}% |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Target | books.py ≥ 85% |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Raw output" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -20 coverage-output.txt >> "$GITHUB_STEP_SUMMARY" || echo "(no output)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Architecture validation ───────────────────────────────────────────
+      - name: Validate architecture doc paths
+        id: arch
+        continue-on-error: true
+        run: |
+          node .github/scripts/validate-arch.js 2>&1 | tee arch-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post arch validation to job summary
+        if: always()
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🏗️ Architecture Validation" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat arch-output.txt >> "$GITHUB_STEP_SUMMARY" || echo "(no output)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Secret scan ───────────────────────────────────────────────────────
+      - name: Secret scan
+        id: secrets
+        continue-on-error: true
+        run: |
+          node .github/scripts/scan-secrets.js 2>&1 | tee scan-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post secret scan to job summary
+        if: always()
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🔒 Secret Scan" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat scan-output.txt >> "$GITHUB_STEP_SUMMARY" || echo "(no output)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Final advisory banner ─────────────────────────────────────────────
+      - name: Post advisory footer
+        if: always()
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "---" >> "$GITHUB_STEP_SUMMARY"
+          echo "> ⚠️ **This job is advisory only.** Results above are evidence, not gates." >> "$GITHUB_STEP_SUMMARY"
+          echo "> It will never block a PR from merging." >> "$GITHUB_STEP_SUMMARY"
+          echo "> To action a finding, open a follow-up issue or exercise." >> "$GITHUB_STEP_SUMMARY"
