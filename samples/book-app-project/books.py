@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict, dataclass
 
 from logging_config import get_logger
+from resilience import retry_with_backoff
 
 DATA_FILE = "data.json"
 
@@ -39,6 +40,10 @@ class BookCollection:  # noqa: D101 -- public interface documented in README and
             extra={"count": len(self.books), "data_file": DATA_FILE},
         )
 
+    # Retry parameters: 3 attempts, 50 ms → 100 ms backoff (total worst-case wait: 150 ms).
+    # Handles transient OSError (disk full, network filesystem blip, permission flush delay).
+    # Rollback: remove the @retry_with_backoff line; save_books works without it.
+    @retry_with_backoff(max_retries=3, initial_delay=0.05, backoff_factor=2.0, exceptions=(OSError,))
     def save_books(self) -> None:
         """Save the current book collection to JSON."""
         with open(DATA_FILE, "w") as f:  # noqa: PTH123 -- pathlib migration is a separate backlog item (backlog.md item 1)

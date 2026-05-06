@@ -119,8 +119,7 @@ jobs:
           echo "> ⚠️ **This job is advisory only.** Results above are evidence, not gates." >> "$GITHUB_STEP_SUMMARY"
           echo "> It will never block a PR from merging." >> "$GITHUB_STEP_SUMMARY"
 
-  # ── Strict lint gate for books.py (advisory) ──────────────────────────────
-  # Enforces E, F, UP, ANN, I rules on books.py only.
+  # ── Strict lint gate for books.py (advisory) ──────────────────────────────  # Enforces E, F, UP, ANN, I rules on books.py only.
   # Other files are not in scope: this gate targets the core domain module.
   # NON-BLOCKING: continue-on-error: true — never prevents a PR from merging.
   strict-lint:
