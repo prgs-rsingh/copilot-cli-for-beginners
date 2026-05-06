@@ -2,4 +2,14 @@
 name = "book-app"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["pytest"]
+dependencies = ["pytest", "pytest-cov"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=. --cov-report=term-missing --cov-report=html:htmlcov"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ["tests/*", ".venv/*", "__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:"]
