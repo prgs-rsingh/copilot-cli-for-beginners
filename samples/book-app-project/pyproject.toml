@@ -2,6 +2,8 @@
 name = "book-app"
 version = "0.1.0"
 requires-python = ">=3.10"
+# pip 26.1.1 is used in the project venv (upgraded from 25.2 in ex-07).
+# Rollback: .venv/bin/pip install "pip==25.2"
 dependencies = ["pytest", "pytest-cov"]
 
 [tool.pytest.ini_options]
