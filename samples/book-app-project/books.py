@@ -31,6 +31,18 @@ class BookCollection:  # noqa: D101 -- public interface documented in README and
         self.books: list[Book] = []
         self.load_books()
 
+    # Retry parameters: 3 attempts, 100 ms → 200 ms → 400 ms backoff, 5 s deadline.
+    # Handles transient OSError (PermissionError, EAGAIN, NFS lock) on the read path.
+    # FileNotFoundError and JSONDecodeError are caught INSIDE the function body and
+    # never reach this decorator — they are handled as "empty collection" states.
+    # Rollback: remove the @retry_with_backoff line; load_books works without it.
+    @retry_with_backoff(
+        max_retries=3,
+        initial_delay=0.1,
+        backoff_factor=2.0,
+        exceptions=(OSError,),
+        deadline=5.0,
+    )
     def load_books(self) -> None:
         """Load books from the JSON file if it exists."""
         try:
@@ -61,10 +73,10 @@ class BookCollection:  # noqa: D101 -- public interface documented in README and
             extra={"count": len(self.books), "data_file": DATA_FILE},
         )
 
-    # Retry parameters: 3 attempts, 50 ms → 100 ms backoff (total worst-case wait: 150 ms).
+    # Retry parameters: 3 attempts, 50 ms → 100 ms backoff, 5 s deadline.
     # Handles transient OSError (disk full, network filesystem blip, permission flush delay).
     # Rollback: remove the @retry_with_backoff line; save_books works without it.
-    @retry_with_backoff(max_retries=3, initial_delay=0.05, backoff_factor=2.0, exceptions=(OSError,))
+    @retry_with_backoff(max_retries=3, initial_delay=0.05, backoff_factor=2.0, exceptions=(OSError,), deadline=5.0)
     def save_books(self) -> None:
         """Save the current book collection to JSON (atomic write via temp file).
 

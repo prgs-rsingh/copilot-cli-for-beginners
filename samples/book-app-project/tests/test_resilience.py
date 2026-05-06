@@ -200,3 +200,131 @@ class TestSaveBooksResilience:
                 collection.save_books()  # fails twice, succeeds on 3rd
 
         assert mock_sleep.call_count == 2  # one sleep per failed attempt
+
+
+# ── Deadline parameter ────────────────────────────────────────────────────────
+
+class TestDeadlineParameter:
+    """deadline= raises TimeoutError when wall time is exhausted before retries finish."""
+
+    def test_deadline_exceeded_raises_timeout_error(self, monkeypatch):
+        """When elapsed >= deadline after a failure, TimeoutError is raised."""
+        # Simulate time advancing 6 s on the first failure (> deadline=5.0)
+        monotonic_values = iter([0.0, 6.0])
+        monkeypatch.setattr("resilience.time.monotonic", lambda: next(monotonic_values))
+
+        fn = MagicMock(side_effect=OSError("disk error"))
+        decorated = retry_with_backoff(
+            max_retries=3, initial_delay=0.1, deadline=5.0, exceptions=(OSError,)
+        )(fn)
+
+        with patch("resilience.time.sleep"):
+            with pytest.raises(TimeoutError, match="Deadline of 5.0s exceeded"):
+                decorated()
+
+        fn.assert_called_once()  # stopped after first attempt
+
+    def test_deadline_not_exceeded_allows_retry(self, monkeypatch):
+        """When elapsed < deadline, retries continue as normal."""
+        # Simulate time advancing only 0.1 s per attempt (well under deadline=5.0)
+        monotonic_seq = iter([0.0, 0.1, 0.2, 0.3])
+        monkeypatch.setattr("resilience.time.monotonic", lambda: next(monotonic_seq))
+
+        fn = MagicMock(side_effect=[OSError("transient"), OSError("transient"), "ok"])
+        decorated = retry_with_backoff(
+            max_retries=3, initial_delay=0.01, deadline=5.0, exceptions=(OSError,)
+        )(fn)
+
+        with patch("resilience.time.sleep"):
+            result = decorated()
+
+        assert result == "ok"
+        assert fn.call_count == 3
+
+    def test_deadline_zero_or_negative_raises_value_error(self):
+        """deadline <= 0 is rejected at decoration time with ValueError."""
+        with pytest.raises(ValueError, match="deadline"):
+            retry_with_backoff(deadline=0.0)(lambda: None)
+
+        with pytest.raises(ValueError, match="deadline"):
+            retry_with_backoff(deadline=-1.0)(lambda: None)
+
+    def test_deadline_none_means_no_time_limit(self, monkeypatch):
+        """deadline=None (default) never raises TimeoutError regardless of elapsed time."""
+        # Simulate very large elapsed time — should not trigger deadline logic
+        monotonic_values = iter([0.0, 9999.0])
+        monkeypatch.setattr("resilience.time.monotonic", lambda: next(monotonic_values))
+
+        fn = MagicMock(side_effect=[OSError("slow"), "ok"])
+        decorated = retry_with_backoff(
+            max_retries=2, initial_delay=0.0, deadline=None, exceptions=(OSError,)
+        )(fn)
+
+        with patch("resilience.time.sleep"):
+            result = decorated()
+
+        assert result == "ok"
+
+
+# ── Integration: load_books retries on transient PermissionError ──────────────
+
+class TestLoadBooksResilience:
+    """load_books() is now decorated with @retry_with_backoff(exceptions=(OSError,)).
+
+    PermissionError (a subclass of OSError) escapes the inner try/except inside
+    load_books and is caught by the decorator. FileNotFoundError and
+    JSONDecodeError are handled INSIDE load_books and never reach the decorator.
+    """
+
+    @pytest.fixture(autouse=True)
+    def use_temp_data_file(self, tmp_path, monkeypatch):
+        temp_file = tmp_path / "data.json"
+        temp_file.write_text("[]")
+        monkeypatch.setattr(books, "DATA_FILE", str(temp_file))
+        return temp_file
+
+    def test_load_succeeds_after_one_transient_permission_error(self, monkeypatch):
+        """load_books() retries and recovers from a single transient PermissionError."""
+        call_count = {"n": 0}
+        original_open = open
+
+        def flaky_open(path, mode="r", *args, **kwargs):
+            # Raise PermissionError on the first open() attempt during load
+            if "data.json" in str(path) and mode == "r":
+                call_count["n"] += 1
+                if call_count["n"] == 1:
+                    raise PermissionError("NFS lock")
+            return original_open(path, mode, *args, **kwargs)
+
+        with patch("resilience.time.sleep"):
+            with patch("builtins.open", side_effect=flaky_open):
+                col = BookCollection()
+
+        assert col.books == []  # empty data file, loaded successfully on retry
+
+    def test_load_raises_after_exhausting_retries(self, monkeypatch):
+        """load_books() re-raises OSError after exhausting all retries."""
+        original_open = open
+
+        def always_permission_error(path, mode="r", *args, **kwargs):
+            if "data.json" in str(path) and mode == "r":
+                raise PermissionError("permanent lock")
+            return original_open(path, mode, *args, **kwargs)
+
+        with patch("resilience.time.sleep"):
+            with patch("builtins.open", side_effect=always_permission_error):
+                with pytest.raises(PermissionError, match="permanent lock"):
+                    BookCollection()
+
+    def test_file_not_found_still_gives_empty_collection(self, monkeypatch):
+        """FileNotFoundError is handled INSIDE load_books — not retried by decorator.
+
+        This confirms the two-layer design: inner handler deals with expected absence,
+        outer decorator deals with transient I/O failures.
+        """
+        monkeypatch.setattr(books, "DATA_FILE", "/nonexistent/path/data.json")
+        with patch("resilience.time.sleep") as mock_sleep:
+            col = BookCollection()
+
+        assert col.books == []
+        mock_sleep.assert_not_called()  # no retry occurred
