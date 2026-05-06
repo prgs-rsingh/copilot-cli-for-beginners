@@ -5,30 +5,27 @@ All tests are deterministic:
 - input() calls patched with monkeypatch to avoid interactive prompts
 - No real I/O occurs in any test
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 
-from utils import get_book_details, get_user_choice, print_menu, prompt, show_books
-
+from utils import get_book_details, get_user_choice, parse_year, print_menu, prompt, show_books
 
 # ── prompt ────────────────────────────────────────────────────────────────────
 
 class TestPrompt:
     def test_returns_stripped_input(self, monkeypatch):
         monkeypatch.setattr("builtins.input", lambda _: "  hello  ")
-        from utils import prompt
         assert prompt("label: ") == "hello"
 
     def test_passes_label_to_input(self, monkeypatch):
         received = {}
         monkeypatch.setattr("builtins.input", lambda lbl: received.update({"lbl": lbl}) or "x")
-        from utils import prompt
         prompt("Enter title: ")
         assert received["lbl"] == "Enter title: "
 
@@ -75,13 +72,11 @@ class TestParseYearSecurity:
         memory allocation (CWE-190 variant). Cap at 10 digits (> any plausible year).
         Rollback: remove the len() guard in parse_year().
         """
-        from utils import parse_year
         with pytest.raises(ValueError, match="too long"):
             parse_year("1" * 11)
 
     def test_ten_char_boundary_is_accepted(self):
         """10-char boundary: exactly 10 digits is still accepted."""
-        from utils import parse_year
         # 10 digits — within limit (year = 1000000000, implausible but accepted by length guard)
         result = parse_year("1000000000")
         assert result == 1_000_000_000

@@ -34,8 +34,12 @@ exclude_lines = ["if __name__ == .__main__.:"]
 line-length = 120
 
 [tool.ruff.lint]
-# Rules applied project-wide for basic hygiene (ruff defaults + pyupgrade).
-select = ["E", "F", "I", "UP"]
+# Rules applied project-wide.
+# Expanded in Run-14 from ["E","F","I","UP"] → ["E","F","I","UP","PERF","SIM","PT"]
+# PERF: performance anti-patterns (dict comprehensions, try-in-loop overhead)
+# SIM:  simplifiable constructs (nested-with, redundant conditions)
+# PT:   pytest-specific rules (fixture style, broad raises)
+select = ["E", "F", "I", "UP", "PERF", "SIM", "PT"]
 ignore = [
     "D203",  # conflicts with D211 (no-blank-line-before-class)
     "D213",  # conflicts with D212 (multi-line-summary-first-line)
@@ -47,4 +51,10 @@ ignore = [
 "book_app.py"       = ["T201", "ANN", "D"]
 "utils.py"          = ["T201", "ANN", "D"]
 "logging_config.py" = ["ANN", "D"]
-"tests/*.py"        = ["ANN", "D", "S101"]
+# tests: suppress categories that generate high noise in test files and are
+#        intentional by design (documented in ai-track-docs/run-14-static-analysis.md)
+# INP001: no __init__.py in tests/ — intentional simple pytest layout
+# PLR2004: magic values in assertions — idiomatic and expected in tests
+# SIM117: nested-with in resilience retry tests — required by test structure
+# PT011: broad pytest.raises — acceptable when exception type is exact
+"tests/*.py"        = ["ANN", "D", "S101", "INP001", "PLR2004", "SIM117", "PT011"]

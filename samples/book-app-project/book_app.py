@@ -9,6 +9,10 @@ logger = get_logger(__name__)
 # Global collection instance
 collection = BookCollection()
 
+# Minimum number of CLI arguments (script name + command).
+# Extracted from the comparison in main() to avoid PLR2004 magic-value lint finding.
+_MIN_ARGS = 2
+
 
 
 def handle_list():
@@ -70,7 +74,7 @@ Commands:
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < _MIN_ARGS:
         show_help()
         return
 

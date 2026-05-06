@@ -6,12 +6,15 @@ Covers three fixes applied in Run-08:
 
 Each test documents the specific risk being guarded and the rollback path.
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
+
 import pytest
+
 import books
 from books import BookCollection
 
@@ -30,7 +33,7 @@ def temp_data(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 class TestAtomicWrite:
-    def test_no_tmp_file_after_successful_save(self, temp_data):
+    def test_no_tmp_file_after_successful_save(self):
         """Security/Safety: .tmp file must not remain after a successful save_books().
 
         Rationale: if os.replace() succeeds, the temp file is the real file.
@@ -138,7 +141,7 @@ class TestStrictDeserialization:
         assert col.books[0].title == "Dune"
         assert col.books[1].read is False
 
-    def test_mixed_valid_and_invalid_records(self, temp_data, capsys):
+    def test_mixed_valid_and_invalid_records(self, temp_data):
         """Safety: valid records are loaded even when some records are malformed."""
         temp_data.write_text(json.dumps([
             {"title": "Dune", "author": "Frank Herbert", "year": 1965, "read": False},

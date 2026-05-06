@@ -1,9 +1,12 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
+
 import pytest
+
 import books
 from books import BookCollection
 
@@ -20,7 +23,7 @@ BOOK_SCHEMA = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def temp_data(tmp_path, monkeypatch):
     """Redirect DATA_FILE to an isolated temp file and return its path."""
     data_file = tmp_path / "data.json"
@@ -104,7 +107,7 @@ def test_golden_book_schema():
     """Contract: golden fixture conforms to BOOK_SCHEMA (guards against accidental field renames)."""
     assert os.path.isfile(GOLDEN_BOOK_FILE), (
         f"Golden file missing: {GOLDEN_BOOK_FILE}\n"
-        "Re-generate it by running: python -c \"import json,books; "
+        'Re-generate it by running: python -c "import json,books; '
         "c=books.BookCollection(); print(json.dumps([{'title':'...','author':'...','year':1999,'read':False}], indent=2))\""
     )
     with open(GOLDEN_BOOK_FILE) as f:

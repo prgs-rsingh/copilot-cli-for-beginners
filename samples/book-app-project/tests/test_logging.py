@@ -15,16 +15,16 @@ Pattern contract (all modules):
   - Extra fields are JSON-serialisable primitives
   - Output goes to stderr only
 """
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-import books
-import book_app
-import utils
 
+import book_app
+import books
+import utils
 
 # ---------------------------------------------------------------------------
 # Log capture helper
@@ -43,6 +43,10 @@ class LogCapture:
         self.records.append({"event": event, "level": "WARNING", **(extra or {})})
 
     def error(self, event: str, *, extra: dict | None = None) -> None:
+        self.records.append({"event": event, "level": "ERROR", **(extra or {})})
+
+    def exception(self, event: str, *, extra: dict | None = None) -> None:
+        """logger.exception() is logger.error() + exc_info; record at ERROR level."""
         self.records.append({"event": event, "level": "ERROR", **(extra or {})})
 
     def events(self, name: str) -> list[dict]:

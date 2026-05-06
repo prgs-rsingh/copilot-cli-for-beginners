@@ -92,7 +92,7 @@ def retry_with_backoff(
                         time.sleep(delay)
                         delay *= backoff_factor
                     else:
-                        logger.error(
+                        logger.exception(
                             "retry.exhausted",
                             extra={
                                 "fn": getattr(fn, "__name__", repr(fn)),

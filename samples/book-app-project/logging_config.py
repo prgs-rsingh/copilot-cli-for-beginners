@@ -39,15 +39,14 @@ class JSONFormatter(logging.Formatter):
             "event": record.getMessage(),
         }
         # Merge any extra fields passed via logger.info(..., extra={...})
-        for key, value in record.__dict__.items():
-            if key not in (
-                "name", "msg", "args", "levelname", "levelno", "pathname",
-                "filename", "module", "exc_info", "exc_text", "stack_info",
-                "lineno", "funcName", "created", "msecs", "relativeCreated",
-                "thread", "threadName", "processName", "process", "message",
-                "taskName",
-            ):
-                payload[key] = value
+        _SKIP = {
+            "name", "msg", "args", "levelname", "levelno", "pathname",
+            "filename", "module", "exc_info", "exc_text", "stack_info",
+            "lineno", "funcName", "created", "msecs", "relativeCreated",
+            "thread", "threadName", "processName", "process", "message",
+            "taskName",
+        }
+        payload.update({k: v for k, v in record.__dict__.items() if k not in _SKIP})
         return json.dumps(payload, default=str)
 
 

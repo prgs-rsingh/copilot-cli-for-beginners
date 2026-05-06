@@ -5,14 +5,17 @@ Validates parse_year() and handle_remove() behaviour in both flag states (ON and
 Every test explicitly sets or clears the env var via monkeypatch so
 tests are isolated regardless of the shell environment.
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import datetime
+
 import pytest
-import books
+
 import book_app
+import books
 import utils
 from utils import parse_year
 
@@ -130,7 +133,7 @@ class TestStrictYearOn:
 # Shared fixture for BOOK_APP_STRICT_REMOVE tests
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+@pytest.fixture
 def collection_with_book(tmp_path, monkeypatch):
     """Isolated BookCollection with one pre-loaded book."""
     data_file = tmp_path / "data.json"

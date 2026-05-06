@@ -14,7 +14,7 @@ def print_menu():
         "2. List books\n"
         "3. Mark book as read\n"
         "4. Remove a book\n"
-        "5. Exit"
+        "5. Exit",
     )
 
 
@@ -82,7 +82,7 @@ def parse_year(year_str: str) -> int:
         return 0
     if len(year_str) > 10:  # 10 digits > any plausible year; guards large-int resource exhaustion
         raise ValueError(
-            f"Year input is too long ({len(year_str)} chars). Maximum accepted length: 10 digits."
+            f"Year input is too long ({len(year_str)} chars). Maximum accepted length: 10 digits.",
         )
     year = int(year_str)
     if _strict_year_enabled():
@@ -94,7 +94,7 @@ def parse_year(year_str: str) -> int:
             )
             raise ValueError(
                 f"Year {year} is out of range. Must be between 1 and {current_year} "
-                "(BOOK_APP_STRICT_YEAR is enabled)."
+                "(BOOK_APP_STRICT_YEAR is enabled).",
             )
     return year
 

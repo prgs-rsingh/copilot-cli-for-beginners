@@ -5,17 +5,18 @@ Tests cover:
 - Integration: save_books() retries on transient OSError
 - Guard-rail: invalid tuning parameters raise ValueError at decoration time
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import pytest
 from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 import books
 from books import BookCollection
 from resilience import retry_with_backoff
-
 
 # ── Decorator unit tests ──────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ class TestRetryWithBackoff:
         """Verify sleep durations follow the exponential backoff sequence."""
         fn = MagicMock(side_effect=OSError("fail"))
         decorated = retry_with_backoff(
-            max_retries=4, initial_delay=0.1, backoff_factor=3.0
+            max_retries=4, initial_delay=0.1, backoff_factor=3.0,
         )(fn)
 
         with patch("resilience.time.sleep") as mock_sleep:

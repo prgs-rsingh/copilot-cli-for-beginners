@@ -6,13 +6,15 @@ All tests monkeypatch:
 
 book_app.py is the CLI entry point (0% coverage before this PR).
 """
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import books
-import book_app
 import pytest
+
+import book_app
+import books
 
 
 @pytest.fixture(autouse=True)
@@ -66,7 +68,7 @@ class TestHandleAdd:
 # ── handle_remove ─────────────────────────────────────────────────────────────
 
 class TestHandleRemove:
-    def test_removes_existing_book(self, monkeypatch, capsys):
+    def test_removes_existing_book(self, monkeypatch):
         book_app.collection.add_book("Dune", "Frank Herbert", 1965)
         monkeypatch.setattr(book_app, "prompt", lambda _: "Dune")
         book_app.handle_remove()
