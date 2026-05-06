@@ -45,8 +45,9 @@ class BookCollection:
         return self.books
 
     def find_book_by_title(self, title: str) -> Optional[Book]:
+        title_lower = title.lower()
         for book in self.books:
-            if book.title.lower() == title.lower():
+            if book.title.lower() == title_lower:
                 return book
         return None
 
@@ -69,4 +70,5 @@ class BookCollection:
 
     def find_by_author(self, author: str) -> List[Book]:
         """Find all books by a given author."""
-        return [b for b in self.books if b.author.lower() == author.lower()]
+        author_lower = author.lower()
+        return [b for b in self.books if b.author.lower() == author_lower]
