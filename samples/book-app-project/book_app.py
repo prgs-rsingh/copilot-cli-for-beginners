@@ -1,24 +1,11 @@
 import sys
 from books import BookCollection
+from utils import show_books, parse_year
 
 
 # Global collection instance
 collection = BookCollection()
 
-
-def show_books(books):
-    """Display books in a user-friendly format."""
-    if not books:
-        print("No books found.")
-        return
-
-    print("\nYour Book Collection:\n")
-
-    for index, book in enumerate(books, start=1):
-        status = "✓" if book.read else " "
-        print(f"{index}. [{status}] {book.title} by {book.author} ({book.year})")
-
-    print()
 
 
 def handle_list():
@@ -34,7 +21,7 @@ def handle_add():
     year_str = input("Year: ").strip()
 
     try:
-        year = int(year_str) if year_str else 0
+        year = parse_year(year_str)
         collection.add_book(title, author, year)
         print("\nBook added successfully.\n")
     except ValueError as e:

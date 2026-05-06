@@ -11,13 +11,20 @@ def get_user_choice() -> str:
     return input("Choose an option (1-5): ").strip()
 
 
+def parse_year(year_str: str) -> int:
+    """Convert a year string to int. Returns 0 for blank input. Raises ValueError for non-numeric."""
+    if not year_str:
+        return 0
+    return int(year_str)
+
+
 def get_book_details():
     title = input("Enter book title: ").strip()
     author = input("Enter author: ").strip()
 
     year_input = input("Enter publication year: ").strip()
     try:
-        year = int(year_input)
+        year = parse_year(year_input)
     except ValueError:
         print("Invalid year. Defaulting to 0.")
         year = 0
@@ -25,12 +32,16 @@ def get_book_details():
     return title, author, year
 
 
-def print_books(books):
+def show_books(books):
+    """Display books in a user-friendly format."""
     if not books:
-        print("No books in your collection.")
+        print("No books found.")
         return
 
-    print("\nYour Books:")
+    print("\nYour Book Collection:\n")
+
     for index, book in enumerate(books, start=1):
-        status = "✅ Read" if book.read else "📖 Unread"
-        print(f"{index}. {book.title} by {book.author} ({book.year}) - {status}")
+        status = "✓" if book.read else " "
+        print(f"{index}. [{status}] {book.title} by {book.author} ({book.year})")
+
+    print()
