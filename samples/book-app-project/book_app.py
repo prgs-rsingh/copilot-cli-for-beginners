@@ -2,7 +2,7 @@ import sys
 
 from books import BookCollection
 from logging_config import get_logger
-from utils import parse_year, prompt, show_books
+from utils import _strict_remove_enabled, parse_year, prompt, show_books
 
 logger = get_logger(__name__)
 
@@ -36,9 +36,15 @@ def handle_remove():
     print("\nRemove a Book\n")
 
     title = prompt("Enter the title of the book to remove: ")
-    collection.remove_book(title)
+    removed = collection.remove_book(title)
 
-    print("\nBook removed if it existed.\n")
+    if _strict_remove_enabled():
+        if removed:
+            print("\nBook removed successfully.\n")
+        else:
+            print("\nNo book found with that title.\n")
+    else:
+        print("\nBook removed if it existed.\n")
 
 
 def handle_find():

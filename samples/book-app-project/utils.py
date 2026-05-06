@@ -27,9 +27,44 @@ def get_user_choice() -> str:
     return prompt("Choose an option (1-5): ")
 
 
+# All flag truthy values — case-insensitive. Any other value (including empty) is OFF.
+_BOOK_APP_TRUTHY = frozenset({"1", "true", "yes"})
+
+# Tracks which flags have already emitted telemetry this process lifetime.
+# Reset is needed in tests via monkeypatch.setattr(utils, "_logged_flags", set()).
+_logged_flags: set[str] = set()
+
+
+def _flag_enabled(env_var: str) -> bool:
+    """Evaluate a BOOK_APP_* feature flag from the environment.
+
+    Returns True when the named env var is '1', 'true', or 'yes' (case-insensitive).
+    Emits a 'flag.active' INFO log event once per flag per process lifetime when ON.
+    Silent when the flag is OFF (default state).
+
+    Naming convention: BOOK_APP_<FEATURE> — uppercase, underscore-separated.
+    Rollback any flag: unset the env var or set it to '0'.
+    """
+    result = os.environ.get(env_var, "").lower() in _BOOK_APP_TRUTHY
+    if result and env_var not in _logged_flags:
+        _logged_flags.add(env_var)
+        logger.info("flag.active", extra={"flag": env_var})
+    return result
+
+
 def _strict_year_enabled() -> bool:
-    """Return True when BOOK_APP_STRICT_YEAR is set to '1', 'true', or 'yes' (case-insensitive)."""
-    return os.environ.get("BOOK_APP_STRICT_YEAR", "").lower() in ("1", "true", "yes")
+    """Return True when BOOK_APP_STRICT_YEAR is active (strict year range enforcement)."""
+    return _flag_enabled("BOOK_APP_STRICT_YEAR")
+
+
+def _strict_remove_enabled() -> bool:
+    """Return True when BOOK_APP_STRICT_REMOVE is active.
+
+    When ON: handle_remove() prints precise success/failure feedback.
+    When OFF (default): prints hedged 'Book removed if it existed.' message.
+    Rollback: unset BOOK_APP_STRICT_REMOVE or set it to '0'.
+    """
+    return _flag_enabled("BOOK_APP_STRICT_REMOVE")
 
 
 def parse_year(year_str: str) -> int:
