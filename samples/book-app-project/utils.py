@@ -3,12 +3,15 @@ import datetime
 
 
 def print_menu():
-    print("\n📚 Book Collection App")
-    print("1. Add a book")
-    print("2. List books")
-    print("3. Mark book as read")
-    print("4. Remove a book")
-    print("5. Exit")
+    # Batch 6 print() calls into one to reduce print() call overhead per menu display.
+    print(
+        "\n\U0001f4da Book Collection App\n"
+        "1. Add a book\n"
+        "2. List books\n"
+        "3. Mark book as read\n"
+        "4. Remove a book\n"
+        "5. Exit"
+    )
 
 
 def prompt(label: str) -> str:
@@ -66,10 +69,11 @@ def show_books(books):
         print("No books found.")
         return
 
-    print("\nYour Book Collection:\n")
-
+    # Batch all lines into one print() call instead of N+3 separate calls.
+    # Output is byte-for-byte identical; reduces print overhead from O(N) to O(1).
+    lines = ["\nYour Book Collection:\n"]
     for index, book in enumerate(books, start=1):
         status = "✓" if book.read else " "
-        print(f"{index}. [{status}] {book.title} by {book.author} ({book.year})")
-
-    print()
+        lines.append(f"{index}. [{status}] {book.title} by {book.author} ({book.year})")
+    lines.append("")
+    print("\n".join(lines))
