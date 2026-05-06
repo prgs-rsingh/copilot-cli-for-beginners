@@ -18,6 +18,9 @@ jobs:
   evidence-summary:
     name: Evidence Summary (advisory)
     runs-on: ubuntu-latest
+    # Prevent hung jobs from consuming runner minutes indefinitely.
+    # 15 min is generous: pip install + 107 tests + arch/secret scans run in < 5 min locally.
+    timeout-minutes: 15
     # Job-level failure does NOT block merges — this is a soft gate only.
     # Branch protection rules must NOT include this workflow as a required check.
 
@@ -36,10 +39,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+          # Cache pip downloads keyed on pyproject.toml — avoids re-downloading
+          # pytest + pytest-cov on every run (~20–45 s saved on cache hit).
+          cache: 'pip'
+          cache-dependency-path: samples/book-app-project/pyproject.toml
 
       - name: Install Python dependencies
         working-directory: samples/book-app-project
-        run: pip install pytest pytest-cov
+        # Pin to exact versions matching [project.dependencies] in pyproject.toml
+        # (added Run-07). Prevents silent breakage from upstream pip releases.
+        run: pip install "pytest==9.0.3" "pytest-cov==7.1.0"
 
       # ── Run tests + coverage ─────────────────────────────────────────────
       - name: Run tests with coverage
