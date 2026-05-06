@@ -33,11 +33,18 @@ def parse_year(year_str: str) -> int:
 
     Returns 0 for blank input. Raises ValueError for non-numeric input.
 
+    Input length is capped at 10 digits before int() conversion to prevent
+    large-integer resource exhaustion at the input boundary (CWE-190 variant).
+
     When BOOK_APP_STRICT_YEAR=1 is set, also raises ValueError if the year is
     not in the range [1, current_year].
     """
     if not year_str:
         return 0
+    if len(year_str) > 10:  # 10 digits > any plausible year; guards large-int resource exhaustion
+        raise ValueError(
+            f"Year input is too long ({len(year_str)} chars). Maximum accepted length: 10 digits."
+        )
     year = int(year_str)
     if _strict_year_enabled():
         current_year = datetime.date.today().year

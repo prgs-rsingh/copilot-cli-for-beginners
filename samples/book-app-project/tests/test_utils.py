@@ -65,6 +65,28 @@ class TestGetUserChoice:
         assert get_user_choice() == "1"
 
 
+# ── parse_year security ───────────────────────────────────────────────────────
+
+class TestParseYearSecurity:
+    def test_oversized_input_raises(self):
+        """Security: year strings > 10 chars are rejected before int() conversion.
+
+        Rationale: int() on arbitrarily long numeric strings causes large-integer
+        memory allocation (CWE-190 variant). Cap at 10 digits (> any plausible year).
+        Rollback: remove the len() guard in parse_year().
+        """
+        from utils import parse_year
+        with pytest.raises(ValueError, match="too long"):
+            parse_year("1" * 11)
+
+    def test_ten_char_boundary_is_accepted(self):
+        """10-char boundary: exactly 10 digits is still accepted."""
+        from utils import parse_year
+        # 10 digits — within limit (year = 1000000000, implausible but accepted by length guard)
+        result = parse_year("1000000000")
+        assert result == 1_000_000_000
+
+
 # ── get_book_details ──────────────────────────────────────────────────────────
 
 class TestGetBookDetails:
