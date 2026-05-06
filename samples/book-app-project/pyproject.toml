@@ -2,9 +2,19 @@
 name = "book-app"
 version = "0.1.0"
 requires-python = ">=3.10"
-# pip 26.1.1 is used in the project venv (upgraded from 25.2 in ex-07).
-# Rollback: .venv/bin/pip install "pip==25.2"
-dependencies = ["pytest", "pytest-cov"]
+# Validated at: pytest==9.0.3, pytest-cov==7.1.0, coverage==7.13.5, ruff==0.15.12
+# Rollback: .venv/bin/pip install "pytest==<previous>" "pytest-cov==<previous>"
+dependencies = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
+
+[project.optional-dependencies]
+# Install dev tools: pip install -e ".[dev]"
+# Rollback: remove this section; .venv/bin/pip uninstall ruff
+dev = [
+    "ruff>=0.15.12",
+]
 
 [tool.pytest.ini_options]
 addopts = "--cov=. --cov-report=term-missing --cov-report=html:htmlcov"
