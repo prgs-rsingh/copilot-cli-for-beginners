@@ -10,7 +10,8 @@
     "verify:gifs": "node .github/scripts/verify-gifs.js",
     "generate:demos": "npm run create:tapes && npm run generate:vhs && npm run verify:gifs",
     "release": "npm run generate:demos",
-    "release:ci": "npm run generate:headers"
+    "release:ci": "npm run generate:headers",
+    "validate:arch": "node .github/scripts/validate-arch.js"
   },
   "keywords": [
     "github-copilot",
