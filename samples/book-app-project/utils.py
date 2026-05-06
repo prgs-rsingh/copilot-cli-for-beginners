@@ -1,5 +1,9 @@
-import os
 import datetime
+import os
+
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def print_menu():
@@ -49,6 +53,10 @@ def parse_year(year_str: str) -> int:
     if _strict_year_enabled():
         current_year = datetime.date.today().year
         if not (1 <= year <= current_year):
+            logger.info(
+                "year.parse_rejected",
+                extra={"year": year, "limit": current_year, "strict": True},
+            )
             raise ValueError(
                 f"Year {year} is out of range. Must be between 1 and {current_year} "
                 "(BOOK_APP_STRICT_YEAR is enabled)."
@@ -63,7 +71,8 @@ def get_book_details():
     year_input = prompt("Enter publication year: ")
     try:
         year = parse_year(year_input)
-    except ValueError:
+    except ValueError as e:
+        logger.warning("year.parse_error", extra={"input": year_input, "reason": str(e)})
         print("Invalid year. Defaulting to 0.")
         year = 0
 

@@ -1,7 +1,9 @@
 import sys
 from books import BookCollection
+from logging_config import get_logger
 from utils import show_books, parse_year, prompt
 
+logger = get_logger(__name__)
 
 # Global collection instance
 collection = BookCollection()
@@ -25,6 +27,7 @@ def handle_add():
         collection.add_book(title, author, year)
         print("\nBook added successfully.\n")
     except ValueError as e:
+        logger.warning("app.error", extra={"command": "add", "error": str(e)})
         print(f"\nError: {e}\n")
 
 
@@ -67,16 +70,22 @@ def main():
     command = sys.argv[1].lower()
 
     if command == "list":
+        logger.info("app.command", extra={"command": command})
         handle_list()
     elif command == "add":
+        logger.info("app.command", extra={"command": command})
         handle_add()
     elif command == "remove":
+        logger.info("app.command", extra={"command": command})
         handle_remove()
     elif command == "find":
+        logger.info("app.command", extra={"command": command})
         handle_find()
     elif command == "help":
+        logger.info("app.command", extra={"command": command})
         show_help()
     else:
+        logger.warning("app.unknown_command", extra={"command": command})
         print("Unknown command.\n")
         show_help()
 

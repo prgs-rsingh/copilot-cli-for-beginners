@@ -36,6 +36,10 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
+from logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def retry_with_backoff(
     max_retries: int = 3,
@@ -75,8 +79,27 @@ def retry_with_backoff(
                 except exceptions as exc:
                     last_exc = exc
                     if attempt < max_retries:
+                        logger.warning(
+                            "retry.attempt",
+                            extra={
+                                "fn": getattr(fn, "__name__", repr(fn)),
+                                "attempt": attempt,
+                                "max": max_retries,
+                                "delay_s": delay,
+                                "error": str(exc),
+                            },
+                        )
                         time.sleep(delay)
                         delay *= backoff_factor
+                    else:
+                        logger.error(
+                            "retry.exhausted",
+                            extra={
+                                "fn": getattr(fn, "__name__", repr(fn)),
+                                "attempts": max_retries,
+                                "error": str(last_exc),
+                            },
+                        )
             raise last_exc  # type: ignore[misc]  # max_retries >= 1 guarantees last_exc is set
 
         return wrapper
