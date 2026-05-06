@@ -1,7 +1,8 @@
 import sys
+
 from books import BookCollection
 from logging_config import get_logger
-from utils import show_books, parse_year, prompt
+from utils import parse_year, prompt, show_books
 
 logger = get_logger(__name__)
 
