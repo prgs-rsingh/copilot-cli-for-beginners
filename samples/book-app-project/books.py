@@ -2,7 +2,11 @@ import json
 from dataclasses import dataclass, asdict
 from typing import List, Optional
 
+from logging_config import get_logger
+
 DATA_FILE = "data.json"
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -29,6 +33,7 @@ class BookCollection:
         except json.JSONDecodeError:
             print("Warning: data.json is corrupted. Starting with empty collection.")
             self.books = []
+        logger.info("collection.loaded", extra={"count": len(self.books), "data_file": DATA_FILE})
 
     def save_books(self):
         """Save the current book collection to JSON."""
@@ -39,6 +44,7 @@ class BookCollection:
         book = Book(title=title, author=author, year=year)
         self.books.append(book)
         self.save_books()
+        logger.info("collection.add", extra={"title": title, "author": author, "year": year, "result": "success", "collection_size": len(self.books)})
         return book
 
     def list_books(self) -> List[Book]:
@@ -56,7 +62,9 @@ class BookCollection:
         if book:
             book.read = True
             self.save_books()
+            logger.info("collection.mark_read", extra={"title": title, "result": "success"})
             return True
+        logger.info("collection.mark_read", extra={"title": title, "result": "not_found"})
         return False
 
     def remove_book(self, title: str) -> bool:
@@ -65,7 +73,9 @@ class BookCollection:
         if book:
             self.books.remove(book)
             self.save_books()
+            logger.info("collection.remove", extra={"title": title, "result": "success", "collection_size": len(self.books)})
             return True
+        logger.info("collection.remove", extra={"title": title, "result": "not_found"})
         return False
 
     def find_by_author(self, author: str) -> List[Book]:
